@@ -21,6 +21,7 @@ public:
     std::string To_string();
     void Clone(Point &p);
     bool Is_equal(Point &p);
+    float Distance_from(Point &p);
     ~Point();
 
 };
@@ -49,6 +50,13 @@ bool Point::Is_equal(Point &p)
 {
     if ((p.GetX() == x) && (p.GetY() == y) && (p.GetZ() == z)) return true;
     return false;
+}
+
+float Point::Distance_from(Point &p){
+    float distance = sqrt(pow(x-p.GetX(), 2) +
+            pow(y-p.GetY(), 2) +
+            pow(z-p.GetZ(), 2));
+    return distance;
 }
 
 Point::~Point()

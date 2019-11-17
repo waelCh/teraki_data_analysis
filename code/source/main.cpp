@@ -15,6 +15,7 @@ using namespace std;
 #define OUTPUT_FILE_A           "../../output/distances_decomp_A.txt"
 #define OUTPUT_FILE_B           "../../output/distances_decomp_B.txt"
 #define OUTPUT_FILE_C           "../../output/distances_decomp_C.txt"
+#define DECOMP_FILES_COUNT      3
 #define MAX_DISTANCE_VALUE      999999
 #define DEBUG_MODE              false
 
@@ -52,59 +53,29 @@ Point create_point(vector<string> &vector)
     return p;
 }
 
-float get_distance(Point &p1, Point &p2)
-{  
-    float distance = sqrt(pow(p1.GetX()-p2.GetX(), 2) +
-                        pow(p1.GetY()-p2.GetY(), 2) +
-                        pow(p1.GetZ()-p2.GetZ(), 2));
-    return distance;
-}
-
-int find_point_in_decomp_file(Point &p, string file_name, Point &closest_p, float &distance)
+void update_min_point(float &old_dist, float new_dist, Point &old_closest_point, Point &new_point)
 {
-    string line;
-    float min_distance = MAX_DISTANCE_VALUE;
-    float x_distance = 0;
-    ifstream file(file_name);
-    vector<string> splitted_line;
-    if (file.is_open())
+    if (new_dist < old_dist)
     {
-        skip_header(file);
-        while(getline(file, line))
-        {
-            split_line(line, splitted_line);
-            Point px = create_point(splitted_line);
-            x_distance = get_distance(p, px);
-            if (x_distance < min_distance)
-            {
-                min_distance = x_distance;
-                closest_p.Clone(px);
-            }
-        }
-        distance = min_distance;
+        old_dist = new_dist;
+        old_closest_point.Clone(new_point);
     }
-    file.close();
-    // return 0 on success
-    return 0;
 }
 
-int find_point_in_decomp_file_array(Point &p, string (&file_names)[3], Point (&closest_p)[3], float (&distance)[3])
+int find_point_in_decomp_file_array(
+        Point &p, 
+        string (&file_names)[DECOMP_FILES_COUNT], 
+        Point (&closest_p)[DECOMP_FILES_COUNT], 
+        float (&distance)[DECOMP_FILES_COUNT])
 {
-    float min_distance_0 = MAX_DISTANCE_VALUE;
-    float min_distance_1 = MAX_DISTANCE_VALUE;
-    float min_distance_2 = MAX_DISTANCE_VALUE;
-    float x_distance_0 = 0;
-    float x_distance_1 = 0;
-    float x_distance_2 = 0;
+    float min_distance[DECOMP_FILES_COUNT] = {MAX_DISTANCE_VALUE, MAX_DISTANCE_VALUE, MAX_DISTANCE_VALUE};
+    float x_distance[DECOMP_FILES_COUNT] = {0, 0, 0};
+    string line_files[DECOMP_FILES_COUNT];
+    vector<string> splitted_line[DECOMP_FILES_COUNT];
+    Point px[DECOMP_FILES_COUNT];
     ifstream decomp_file_0(file_names[0]);
     ifstream decomp_file_1(file_names[1]);
     ifstream decomp_file_2(file_names[2]);
-    string line_file_0;
-    string line_file_1;
-    string line_file_2;
-    vector<string> splitted_line_0;
-    vector<string> splitted_line_1;
-    vector<string> splitted_line_2;
     if ((decomp_file_0.is_open()) 
         && (decomp_file_1.is_open()) 
         && (decomp_file_2.is_open()))
@@ -112,44 +83,39 @@ int find_point_in_decomp_file_array(Point &p, string (&file_names)[3], Point (&c
         skip_header(decomp_file_0);
         skip_header(decomp_file_1);
         skip_header(decomp_file_2);
-        while((getline(decomp_file_0, line_file_0)) 
-            && (getline(decomp_file_1, line_file_1)) 
-            && (getline(decomp_file_2, line_file_2)))
+        while((getline(decomp_file_0, line_files[0])) 
+            && (getline(decomp_file_1, line_files[1])) 
+            && (getline(decomp_file_2, line_files[2])))
         {
-            split_line(line_file_0, splitted_line_0);
-            split_line(line_file_1, splitted_line_1);
-            split_line(line_file_2, splitted_line_2);
-            Point px0 = create_point(splitted_line_0);
-            Point px1 = create_point(splitted_line_1);
-            Point px2 = create_point(splitted_line_2);
-            x_distance_0 = get_distance(p, px0);
-            x_distance_1 = get_distance(p, px1);
-            x_distance_2 = get_distance(p, px2);
-            if (x_distance_0 < min_distance_0)
-            {
-                min_distance_0 = x_distance_0;
-                closest_p[0].Clone(px0);
-            }
-            if (x_distance_1 < min_distance_1)
-            {
-                min_distance_1 = x_distance_1;
-                closest_p[1].Clone(px1);
-            }
-            if (x_distance_2 < min_distance_2)
-            {
-                min_distance_2 = x_distance_2;
-                closest_p[2].Clone(px2);
-            }
+            split_line(line_files[0], splitted_line[0]);
+            split_line(line_files[1], splitted_line[1]);
+            split_line(line_files[2], splitted_line[2]);
+            px[0] = create_point(splitted_line[0]);
+            px[1] = create_point(splitted_line[1]);
+            px[2] = create_point(splitted_line[2]);
+            x_distance[0] = p.Distance_from(px[0]);
+            x_distance[1] = p.Distance_from(px[1]);
+            x_distance[2] = p.Distance_from(px[2]);
+            update_min_point(min_distance[0], x_distance[0], closest_p[0], px[0]);
+            update_min_point(min_distance[1], x_distance[1], closest_p[1], px[1]);
+            update_min_point(min_distance[2], x_distance[2], closest_p[2], px[2]);
         }
-        distance[0] = min_distance_0;
-        distance[1] = min_distance_1;
-        distance[2] = min_distance_2;
+        distance[0] = min_distance[0];
+        distance[1] = min_distance[1];
+        distance[2] = min_distance[2];
     }
     decomp_file_0.close();
     decomp_file_1.close();
     decomp_file_2.close();
     // return 0 on success
     return 0;
+}
+
+void log_to_dist_file(ofstream &file, Point &org_p, Point &found_p, float distance)
+{
+    file <<org_p.GetX() <<" " <<org_p.GetY() <<" " <<org_p.GetZ() \
+            <<" " <<found_p.GetZ() <<" " <<found_p.GetY() <<" " <<found_p.GetX() \
+            <<" " <<distance <<"\n";
 }
 
 int main() 
@@ -170,22 +136,14 @@ int main()
             Point org_p = create_point(splitted_line);
             if (!org_p.Is_equal(p_error))
             {
-                float distances[3];
-                Point closest_points[3];
-                string decomp_files[3] = {DECOMP_FILE_A, DECOMP_FILE_B, DECOMP_FILE_C};
+                float distances[DECOMP_FILES_COUNT];
+                Point closest_points[DECOMP_FILES_COUNT];
+                string decomp_files[DECOMP_FILES_COUNT] = {DECOMP_FILE_A, DECOMP_FILE_B, DECOMP_FILE_C};
                 find_point_in_decomp_file_array(org_p, decomp_files, closest_points, distances);
-                //File A
-                out_file_A <<org_p.GetX() <<" " <<org_p.GetY() <<" " <<org_p.GetZ() \
-                    <<" " <<closest_points[0].GetZ() <<" " <<closest_points[0].GetY() <<" " <<closest_points[0].GetX() \
-                    <<" " <<distances[0] <<"\n";
-                // File B
-                out_file_B <<org_p.GetX() <<" " <<org_p.GetY() <<" " <<org_p.GetZ() \
-                    <<" " <<closest_points[1].GetZ() <<" " <<closest_points[1].GetY() <<" " <<closest_points[1].GetX() \
-                    <<" " <<distances[1] <<"\n";
-                // File C
-                out_file_C <<org_p.GetX() <<" " <<org_p.GetY() <<" " <<org_p.GetZ() \
-                    <<" " <<closest_points[2].GetZ() <<" " <<closest_points[2].GetY() <<" " <<closest_points[2].GetX() \
-                    <<" " <<distances[2] <<"\n";
+                // log distances to corresponding files
+                log_to_dist_file(out_file_A, org_p, closest_points[0], distances[0]);
+                log_to_dist_file(out_file_B, org_p, closest_points[1], distances[1]);
+                log_to_dist_file(out_file_C, org_p, closest_points[2], distances[2]);
             }
         }
         out_file_A.close();
