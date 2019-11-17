@@ -19,6 +19,8 @@ public:
     void SetY(float y) {this->y = y;};
     void SetZ(float z) {this->z = z;};
     std::string To_string();
+    void Clone(Point &p);
+    bool Is_equal(Point &p);
     ~Point();
 
 };
@@ -34,6 +36,19 @@ std::string Point::To_string()
 {
     std::string result = "X= " + std::to_string(x) + " Y= " + std::to_string(y) + " Z= " + std::to_string(z);
     return(result);
+}
+
+void Point::Clone(Point &p)
+{
+    this->x = p.GetX();
+    this->y = p.GetY();
+    this->z = p.GetZ();
+}
+
+bool Point::Is_equal(Point &p)
+{
+    if ((p.GetX() == x) && (p.GetY() == y) && (p.GetZ() == z)) return true;
+    return false;
 }
 
 Point::~Point()
