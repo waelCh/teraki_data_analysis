@@ -7,7 +7,10 @@
 #include "Point.h"
 using namespace std;
 
+// The text line that seperate header metadata from LIDAR points.
 #define END_HEADER_MARKER       "end_header"
+
+// The input and output files locations.
 #define UNCOMP_FILE             "../../input/Car_XYZI_uncompressed_ASCII.ply"
 #define DECOMP_FILE_A           "../../input/Car_XYZI_decompressed_ASCII_A.ply"
 #define DECOMP_FILE_B           "../../input/Car_XYZI_decompressed_ASCII_B.ply"
@@ -15,14 +18,24 @@ using namespace std;
 #define OUTPUT_FILE_A           "../../output/distances_decomp_A.txt"
 #define OUTPUT_FILE_B           "../../output/distances_decomp_B.txt"
 #define OUTPUT_FILE_C           "../../output/distances_decomp_C.txt"
+
+// The number of decompressed files existing in the input folder.
 #define DECOMP_FILES_COUNT      3
+
 #define MAX_DISTANCE_VALUE      999999
 #define DEBUG_MODE              false
 
+/**
+ * Skip header lines of the input file.
+ *
+ * @param stream references the file we want to skip some lines.
+ * @return void.
+ */
 void skip_header(istream &stream) 
 {
     bool keep_looping = true;
     string line;
+    // Keep looping and skipping lines until we reach END_HEADER_MARKER
     while (keep_looping)
     {
         getline(stream, line);
@@ -33,6 +46,14 @@ void skip_header(istream &stream)
     }    
 }
 
+/**
+ * Given a space separated string, splits it into a vector
+ * of sub-strings.
+ *
+ * @param text string to be splitted.
+ * @param result vector containing the obtained sub-strings.
+ * @return void.
+ */
 void split_line(string text, vector<string> &result)
 {
     istringstream iss(text);
@@ -41,6 +62,14 @@ void split_line(string text, vector<string> &result)
         result.push_back(s);
 }
 
+/**
+ * Create a Point object from a vector
+ *
+ * @param vector contains the coordinates of a point.
+ * @return new point containing 'vector' passed coordinates, or 
+ * a point with coordiantes (-1,-1,-1) 
+ * if the number of 'vector' elements is not equal to 4.
+ */
 Point create_point(vector<string> &vector)
 {
     Point p(-1,-1,-1);
@@ -53,6 +82,9 @@ Point create_point(vector<string> &vector)
     return p;
 }
 
+/**
+ * Save the min disance and its associated point
+ */
 void update_min_point(float &old_dist, float new_dist, Point &old_closest_point, Point &new_point)
 {
     if (new_dist < old_dist)
@@ -62,6 +94,16 @@ void update_min_point(float &old_dist, float new_dist, Point &old_closest_point,
     }
 }
 
+/**
+ * Get through the list of record files and retrieve
+ * a point from each file that satisfy the least distance with point 'p'
+ * 
+ * @param p reference point to measure distance
+ * @param file_names URI of data files
+ * @param closest_p list of closest points to point 'p'
+ * @param distance min recorded distances between 'p' and all records in each file
+ * @return 0 on sucess. -1 if an error occured
+ */
 int find_point_in_decomp_file_array(
         Point &p, 
         string (&file_names)[DECOMP_FILES_COUNT], 
@@ -83,6 +125,8 @@ int find_point_in_decomp_file_array(
         skip_header(decomp_file_0);
         skip_header(decomp_file_1);
         skip_header(decomp_file_2);
+        // go through all the decomp files simultaneously, 
+        // compare distances with 'p' and save the least record
         while((getline(decomp_file_0, line_files[0])) 
             && (getline(decomp_file_1, line_files[1])) 
             && (getline(decomp_file_2, line_files[2])))
@@ -139,6 +183,7 @@ int main()
                 float distances[DECOMP_FILES_COUNT];
                 Point closest_points[DECOMP_FILES_COUNT];
                 string decomp_files[DECOMP_FILES_COUNT] = {DECOMP_FILE_A, DECOMP_FILE_B, DECOMP_FILE_C};
+                // find the closest point in each decomp file
                 find_point_in_decomp_file_array(org_p, decomp_files, closest_points, distances);
                 // log distances to corresponding files
                 log_to_dist_file(out_file_A, org_p, closest_points[0], distances[0]);
