@@ -59,8 +59,9 @@ if [[ ${DO_RUN} == "0" ]]; then
 fi
 
 # if here, you also want to run
-
-COMMAND="./code/build/test.exe" # for example, assuming you create an executable test.exe
+COMMAND="pwd"
+eval ${COMMAND}
+COMMAND="cd ./code/build && ./teraki" # for example, assuming you create an executable test.exe
 echo "COMMAND=${COMMAND}"
 eval ${COMMAND}
 
